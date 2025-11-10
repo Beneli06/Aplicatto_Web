@@ -1,0 +1,28 @@
+---
+---
+
+nav > .auth-cta {
+  padding: 8px 18px;
+  border-radius: var(--rounded);
+  background: var(--brand-1);
+  color: var(--brand-1-text);
+  font-weight: var(--semi-bold);
+  letter-spacing: 0.05em;
+  text-transform: none;
+  transition: background var(--transition), color var(--transition), transform var(--transition);
+}
+
+nav > .auth-cta:hover {
+  background: #e0a523;
+  color: var(--brand-1-text);
+  transform: translateY(-1px);
+}
+
+header:not([data-big]) {
+  @media (max-width: 700px) {
+    nav > .auth-cta {
+      width: 100%;
+      text-align: center;
+    }
+  }
+}

@@ -3,29 +3,65 @@
 
 // colors
 [data-dark="false"] {
-  --primary: #0795d9;
-  --secondary: #7dd3fc;
-  --text: #000000;
-  --background: #ffffff;
-  --background-alt: #fafafa;
-  --light-gray: #e0e0e0;
-  --gray: #808080;
-  --dark-gray: #404040;
-  --overlay: #00000020;
+  --brand-1: #FEC02C; // Sol Dorado
+  --brand-2: #146E51; // Bahía Esmeralda
+  --accent-1: #E05B2A; // Calabaza Natural
+  --accent-2: #597573; // Pincelada Azul
+  --accent-3: #5BBA7E; // Menta Yerbabuena
+  --info: #359DB3; // Azul Bondi
+  --danger: #BA2A27; // Pasión Frambuesa
+  --success: #5BBA7E;
+
+  --primary: var(--brand-2);
+  --secondary: var(--brand-1);
+  --text: #323A42; // Azul Real
+  --muted: #606062; // Gris 80%
+  --background: #FEFEFE; // Blanco
+  --background-alt: #FFFFFF;
+  --surface: #FFFFFF;
+  --light-gray: #D2D3D5; // Gris 20%
+  --gray: #96989A; // Gris 50%
+  --dark-gray: #606062;
+  --border: #D2D3D5;
+  --overlay: rgba(50, 58, 66, 0.12);
 }
+
 [data-dark="true"] {
-  --primary: #0795d9;
-  --secondary: #075985;
-  --text: #ffffff;
-  --background: #181818;
-  --background-alt: #1c1c1c;
-  --light-gray: #404040;
-  --gray: #808080;
-  --dark-gray: #b0b0b0;
-  --overlay: #ffffff10;
+  --brand-1: #FEC02C;
+  --brand-2: #0F5942;
+  --accent-1: #E05B2A;
+  --accent-2: #6B8A88;
+  --accent-3: #4da873;
+  --info: #4ab3ca;
+  --danger: #ff6b66;
+  --success: #4da873;
+
+  --primary: #51c497;
+  --secondary: #FEC02C;
+  --text: #F5F6F7;
+  --muted: #B7CBC6;
+  --background: #131A19;
+  --background-alt: #18211F;
+  --surface: #1C2624;
+  --light-gray: #2F3A38;
+  --gray: #6B8A88;
+  --dark-gray: #CBD8D5;
+  --border: #2F3A38;
+  --overlay: rgba(12, 19, 18, 0.6);
 }
 
 :root {
+  // brand palette
+  --brand-1: #FEC02C;
+  --brand-2: #146E51;
+  --accent-1: #E05B2A;
+  --accent-2: #597573;
+  --accent-3: #5BBA7E;
+  --info: #359DB3;
+  --danger: #BA2A27;
+  --success: #5BBA7E;
+  --brand-1-text: #323A42;
+
   // font families
   --title: "Barlow", sans-serif;
   --heading: "Barlow", sans-serif;
