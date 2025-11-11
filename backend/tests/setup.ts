@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
+jest.setTimeout(60000);
+
 import { UserModel } from '../src/models/user.model';
 
 process.env.NODE_ENV = 'test';

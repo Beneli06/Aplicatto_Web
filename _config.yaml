@@ -5,6 +5,7 @@ description: An easy-to-use, flexible website template for labs, with automatic 
 header: images/background.jpg
 footer: images/background.jpg
 proofer: false
+api_base_url: http://localhost:4001/api/v1
 
 # site social media and other links
 links:
@@ -57,6 +58,9 @@ highlighter: rouge
 # jekyll theme
 theme: null
 
+# output directory
+destination: _site_dev
+
 # sass settings
 sass:
   sass_dir: _styles
@@ -71,3 +75,11 @@ exclude:
   - README.md
   - LICENSE.md
   - CITATION.cff
+  - backend
+  - node_modules
+  - vendor
+  - package-lock.json
+  - package.json
+  - tsconfig.json
+  - jest.config.ts
+  - dist

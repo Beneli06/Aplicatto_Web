@@ -7,25 +7,85 @@ nav:
 permalink: /auth/
 ---
 
-# Iniciar sesión o registrarse
+# Autenticación Aplicatto
 
-La plataforma Aplicatto Bookstore contará con autenticación basada en tokens JWT y flujos seguros sobre HTTPS. Mientras el backend está en desarrollo, esta página describe cómo interactuar con el API y dónde se mostrará el formulario de acceso.
+Activa tu sesión directamente desde el navegador y experimenta el mismo flujo que validamos con Postman. El backend expone los endpoints en `{{ site.api_base_url }}` y esta vista ya está conectada para consumirlos.
 
-## Próximos pasos en la interfaz
-- **Botón de acceso:** El botón "Iniciar sesión / Registro" en la barra superior abre esta vista.
-- **Formulario React:** Aquí vivirá el formulario definitivo con campos para correo electrónico, contraseña y recuperación.
-- **Mensajes en vivo:** Se mostrarán alertas de éxito o error reutilizando la misma lógica que se valida en Postman.
+## Cómo usar esta página
+1. **Levanta la API** con `npm run dev` dentro de `backend/`.
+2. **Recarga** este sitio (Jekyll) y completa cualquiera de los formularios.
+3. **Consulta tu estado** en la parte inferior y usa el botón *Cerrar sesión* en la cabecera o aquí mismo.
 
-## Flujo automatizado de pruebas (Postman)
-Consulta la guía completa en [`docs/postman-auth-workflow.md`](../docs/postman-auth-workflow.md) para:
-- Probar el endpoint `POST /auth/login` con credenciales de prueba.
-- Ejecutar el registro automático si el usuario no existe.
-- Validar acceso a endpoints protegidos como `/user/profile`.
+<div class="auth-wrapper">
+  <section>
+    <p>
+      Todos los envíos utilizan <code>fetch</code> con <strong>cookies HttpOnly</strong> para el refresh token y almacenan el access token en memoria local.
+      Si el login falla, el frontend replica la lógica “login → registro → reintento” descrita en la guía de Postman.
+    </p>
+  </section>
 
-## Integración con el backend
-1. **Enviar credenciales** desde el formulario React al API.
-2. **Manejar respuestas** replicando el flujo Postman (login → registro → reintento).
-3. **Guardar tokens** en cookies HttpOnly (refresh) y memoria segura (access).
-4. **Redirigir** al catálogo o al panel de administración según rol.
+  <div class="auth-feedback" data-auth-feedback hidden>
+    <span data-auth-feedback-message></span>
+  </div>
 
-¿Necesitas soporte adicional? Añade un ticket en el tablero de Scrum o contacta al equipo de backend para coordinar credenciales de prueba.
+  <div class="auth-grid">
+    <section class="auth-card">
+      <h2>Crear una cuenta</h2>
+      <p>Registra a un nuevo miembro y obtén tokens inmediatamente.</p>
+      <form class="auth-form" data-auth-form="register" autocomplete="on">
+        <label>
+          Nombre completo
+          <input type="text" name="fullName" placeholder="Valeria Torres" autocomplete="name">
+        </label>
+        <label>
+          Correo electrónico
+          <input type="email" name="email" placeholder="valeria@example.com" autocomplete="email" required>
+        </label>
+        <label>
+          Contraseña
+          <input type="password" name="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
+        </label>
+        <button type="submit">Registrarme</button>
+      </form>
+    </section>
+
+    <section class="auth-card">
+      <h2>Iniciar sesión</h2>
+      <p>Accede con tus credenciales para obtener un nuevo par de tokens.</p>
+      <form class="auth-form" data-auth-form="login" autocomplete="on">
+        <label>
+          Correo electrónico
+          <input type="email" name="email" placeholder="correo@ejemplo.com" autocomplete="email" required>
+        </label>
+        <label>
+          Contraseña
+          <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Ingresar</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="auth-status" data-auth-status data-visible="false">
+    <h2>Sesión activa</h2>
+    <p>Cuando te autentiques verás tus datos y podrás probar endpoints protegidos.</p>
+    <div class="auth-status__meta">
+      <span data-auth-status-email></span>
+      <span data-auth-status-role></span>
+      <span data-auth-status-updated></span>
+    </div>
+    <div class="auth-actions" data-auth-actions hidden>
+      <button type="button" data-auth-refresh>Renovar tokens</button>
+      <button type="button" data-auth-admin>Listar usuarios (admin)</button>
+    </div>
+    <pre data-auth-output hidden></pre>
+  </section>
+
+  <section>
+    <h2>Compatibilidad con Postman</h2>
+    <p>
+      Los mismos headers, scripts y validaciones definidos en <a href="{{ '/docs/postman-auth-workflow.md' | relative_url }}">la guía de Postman</a> se aplican aquí.
+      Puedes reutilizar las credenciales de prueba del curso (`admin@aplicatto.dev / Admin#1234`).
+    </p>
+  </section>
+</div>

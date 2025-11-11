@@ -37,7 +37,7 @@ Este servicio expone la API REST para autenticación y gestión de usuarios del 
 
 | Comando | Descripción |
 | --- | --- |
-| `npm run dev` | Levanta el servidor con _hot reload_ gracias a `ts-node-dev`. |
+| `npm run dev` | Levanta el servidor en modo desarrollo con _hot reload_ mediante `tsx`. |
 | `npm run build` | Compila TypeScript a JavaScript en `dist/`. |
 | `npm start` | Ejecuta la versión compilada (`dist/server.js`). |
 | `npm test` | Ejecuta pruebas integrales con Jest + Supertest usando MongoDB en memoria. |

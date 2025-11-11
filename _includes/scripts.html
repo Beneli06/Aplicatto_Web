@@ -1,3 +1,8 @@
+{% assign aplicatto_api = site.api_base_url | default: 'http://localhost:4001/api/v1' %}
+<script>
+  window.APLICATTO_API_BASE = "{{ aplicatto_api | escape }}";
+</script>
+
 <!-- third party scripts -->
 <script src="https://unpkg.com/@popperjs/core@2" defer></script>
 <script src="https://unpkg.com/tippy.js@6" defer></script>

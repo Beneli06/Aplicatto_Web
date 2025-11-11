@@ -55,12 +55,24 @@
         </a>
       {% endif %}
     {% endfor %}
-    <a
-      class="auth-cta"
-      href="{{ '/auth/' | relative_url | uri_escape }}"
-      data-tooltip="Iniciar sesión o registrarse"
-    >
-      Iniciar sesión / Registro
-    </a>
+    <div class="auth-area" data-auth-area>
+      <a
+        class="auth-cta"
+        href="{{ '/auth/' | relative_url | uri_escape }}"
+        data-tooltip="Iniciar sesión o registrarse"
+        data-auth-link
+      >
+        Iniciar sesión / Registro
+      </a>
+      <div class="auth-profile" data-auth-user hidden>
+        <div class="auth-profile__details">
+          <span class="auth-profile__greeting">Hola, <strong data-auth-user-name>Semillerista</strong></span>
+          <span class="auth-profile__meta" data-auth-user-role></span>
+        </div>
+        <button type="button" class="auth-logout" data-auth-logout>
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
   </nav>
 </header>
