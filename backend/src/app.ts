@@ -13,13 +13,38 @@ import { apiRouter } from './routes';
 
 const app = express();
 
+app.disable('x-powered-by');
+
 app.set('trust proxy', 1);
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'same-site' },
+    crossOriginEmbedderPolicy: false
+  })
+);
+app.use(helmet.referrerPolicy({ policy: 'no-referrer' }));
+
+const allowedOrigins = new Set(env.clientOrigins);
+
 app.use(
   cors({
-    origin: env.nodeEnv === 'development' ? true : undefined,
-    credentials: true
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['set-cookie'],
+    maxAge: 86400
   })
 );
 app.use(express.json({ limit: '1mb' }));

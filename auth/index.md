@@ -1,91 +1,84 @@
 ---
-title: Autenticación
 layout: default
-nav:
-  order: 60
-  tooltip: Gestiona tu sesión
-permalink: /auth/
+title: Autenticación
 ---
 
-# Autenticación Aplicatto
-
-Activa tu sesión directamente desde el navegador y experimenta el mismo flujo que validamos con Postman. El backend expone los endpoints en `{{ site.api_base_url }}` y esta vista ya está conectada para consumirlos.
-
-## Cómo usar esta página
-1. **Levanta la API** con `npm run dev` dentro de `backend/`.
-2. **Recarga** este sitio (Jekyll) y completa cualquiera de los formularios.
-3. **Consulta tu estado** en la parte inferior y usa el botón *Cerrar sesión* en la cabecera o aquí mismo.
-
-<div class="auth-wrapper">
-  <section>
-    <p>
-      Todos los envíos utilizan <code>fetch</code> con <strong>cookies HttpOnly</strong> para el refresh token y almacenan el access token en memoria local.
-      Si el login falla, el frontend replica la lógica “login → registro → reintento” descrita en la guía de Postman.
-    </p>
-  </section>
-
-  <div class="auth-feedback" data-auth-feedback hidden>
-    <span data-auth-feedback-message></span>
-  </div>
-
-  <div class="auth-grid">
-    <section class="auth-card">
-      <h2>Crear una cuenta</h2>
-      <p>Registra a un nuevo miembro y obtén tokens inmediatamente.</p>
-      <form class="auth-form" data-auth-form="register" autocomplete="on">
-        <label>
-          Nombre completo
-          <input type="text" name="fullName" placeholder="Valeria Torres" autocomplete="name">
-        </label>
-        <label>
-          Correo electrónico
-          <input type="email" name="email" placeholder="valeria@example.com" autocomplete="email" required>
-        </label>
-        <label>
-          Contraseña
-          <input type="password" name="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
-        </label>
-        <button type="submit">Registrarme</button>
-      </form>
-    </section>
-
-    <section class="auth-card">
-      <h2>Iniciar sesión</h2>
-      <p>Accede con tus credenciales para obtener un nuevo par de tokens.</p>
-      <form class="auth-form" data-auth-form="login" autocomplete="on">
-        <label>
-          Correo electrónico
-          <input type="email" name="email" placeholder="correo@ejemplo.com" autocomplete="email" required>
-        </label>
-        <label>
-          Contraseña
-          <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
-        </label>
-        <button type="submit">Ingresar</button>
-      </form>
-    </section>
-  </div>
-
-  <section class="auth-status" data-auth-status data-visible="false">
-    <h2>Sesión activa</h2>
-    <p>Cuando te autentiques verás tus datos y podrás probar endpoints protegidos.</p>
-    <div class="auth-status__meta">
-      <span data-auth-status-email></span>
-      <span data-auth-status-role></span>
-      <span data-auth-status-updated></span>
+<div class="auth-container">
+  <div id="auth-card" class="auth-card">
+    <div id="session-info" class="session-info" style="display: none;">
+      <h2 class="auth-title">Sesión Activa</h2>
+      <p>Ya has iniciado sesión.</p>
+      <div id="user-details"></div>
+      <button id="logout-button" class="auth-button">Cerrar Sesión</button>
+      <div id="admin-actions" style="display: none; margin-top: 20px;">
+        <h4>Acciones de Administrador</h4>
+        <button id="refresh-token-button" class="auth-button admin">Refrescar Token</button>
+        <button id="get-users-button" class="auth-button admin">Obtener Usuarios</button>
+      </div>
     </div>
-    <div class="auth-actions" data-auth-actions hidden>
-      <button type="button" data-auth-refresh>Renovar tokens</button>
-      <button type="button" data-auth-admin>Listar usuarios (admin)</button>
-    </div>
-    <pre data-auth-output hidden></pre>
-  </section>
 
-  <section>
-    <h2>Compatibilidad con Postman</h2>
-    <p>
-      Los mismos headers, scripts y validaciones definidos en <a href="{{ '/docs/postman-auth-workflow.md' | relative_url }}">la guía de Postman</a> se aplican aquí.
-      Puedes reutilizar las credenciales de prueba del curso (`admin@aplicatto.dev / Admin#1234`).
-    </p>
-  </section>
+    <div id="auth-forms">
+      <div class="auth-header">
+        <h2 id="auth-title" class="auth-title">Iniciar Sesión</h2>
+        <p class="auth-subtitle">¿No tienes una cuenta? <a href="#" id="toggle-link">Regístrate</a></p>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <div class="input-group">
+          <label for="login-email">Correo Electrónico</label>
+          <input type="email" id="login-email" required autocomplete="email">
+        </div>
+        <div class="input-group">
+          <label for="login-password">Contraseña</label>
+          <div class="password-wrapper">
+            <input type="password" id="login-password" required autocomplete="current-password">
+            <span class="password-toggle">
+              <i class="fas fa-eye"></i>
+            </span>
+          </div>
+        </div>
+        <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+        <button type="submit" id="login-button" class="auth-button">
+          <span class="button-text">Iniciar Sesión</span>
+          <span class="spinner" style="display: none;"></span>
+        </button>
+      </form>
+
+      <form id="register-form" class="auth-form" style="display: none;">
+        <div class="input-group">
+          <label for="register-username">Nombre de Usuario</label>
+          <input type="text" id="register-username" required autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label for="register-email">Correo Electrónico</label>
+          <input type="email" id="register-email" required autocomplete="email">
+        </div>
+        <div class="input-group">
+          <label for="register-password">Contraseña</label>
+          <div class="password-wrapper">
+            <input type="password" id="register-password" required autocomplete="new-password" aria-describedby="password-constraints">
+            <span class="password-toggle">
+              <i class="fas fa-eye"></i>
+            </span>
+          </div>
+          <ul id="password-constraints" class="password-constraints" style="display: none;">
+            <li data-constraint="length">8 caracteres mínimo</li>
+            <li data-constraint="lowercase">Una letra minúscula</li>
+            <li data-constraint="uppercase">Una letra mayúscula</li>
+            <li data-constraint="number">Un número</li>
+            <li data-constraint="symbol">Un símbolo</li>
+          </ul>
+        </div>
+        <button type="submit" id="register-button" class="auth-button">
+          <span class="button-text">Crear Cuenta</span>
+          <span class="spinner" style="display: none;"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  <div id="auth-response" class="auth-response"></div>
 </div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="{{ '/_styles/auth.css' | relative_url }}">
+<script src="{{ '/_scripts/auth.js' | relative_url }}"></script>

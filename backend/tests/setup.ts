@@ -10,6 +10,10 @@ process.env.MONGODB_URI = 'mongodb://127.0.0.1:27017/test-db-placeholder';
 process.env.JWT_ACCESS_SECRET = 'test-access-secret-which-is-long-enough-123456';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-which-is-long-enough-123456';
 process.env.PORT = '0';
+process.env.CLIENT_ORIGINS = 'http://127.0.0.1:4000';
+process.env.COOKIE_SECURE_MODE = 'never';
+process.env.COOKIE_SAMESITE = 'lax';
+process.env.COOKIE_DOMAIN = '';
 
 let mongoServer: MongoMemoryServer;
 

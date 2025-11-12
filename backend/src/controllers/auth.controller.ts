@@ -13,8 +13,10 @@ const REFRESH_COOKIE_NAME = 'refreshToken';
 
 const refreshCookieOptions: CookieOptions = {
   httpOnly: true,
-  secure: env.nodeEnv === 'production',
-  sameSite: 'lax',
+  secure: env.cookie.secure,
+  sameSite: env.cookie.sameSite,
+  domain: env.cookie.domain,
+  path: '/',
   maxAge: env.refreshTokenTtlDays * 24 * 60 * 60 * 1000
 };
 
@@ -25,7 +27,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
     res
       .cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, refreshCookieOptions)
       .status(201)
-      .json({ user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
+      .json({ user, accessToken: tokens.accessToken });
   } catch (error) {
     next(error);
   }
@@ -37,7 +39,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 
     res
       .cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, refreshCookieOptions)
-      .json({ user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
+      .json({ user, accessToken: tokens.accessToken });
   } catch (error) {
     next(error);
   }
@@ -55,7 +57,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
 
     res
       .cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, refreshCookieOptions)
-      .json({ user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
+      .json({ user, accessToken: tokens.accessToken });
   } catch (error) {
     next(error);
   }

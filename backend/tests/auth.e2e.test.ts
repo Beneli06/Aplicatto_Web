@@ -23,8 +23,7 @@ describe('Auth & Admin API', () => {
         role: 'member',
         status: 'active'
       },
-      accessToken: expect.any(String),
-      refreshToken: expect.any(String)
+      accessToken: expect.any(String)
     });
 
     expect(response.headers['set-cookie']).toBeDefined();

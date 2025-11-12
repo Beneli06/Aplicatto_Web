@@ -1,344 +1,302 @@
-/* global window, document, localStorage, fetch */
+/* global document, fetch */
 
-(() => {
-  const API_BASE = window.APLICATTO_API_BASE || 'http://localhost:4001/api/v1';
-  const endpoints = {
-    register: `${API_BASE}/auth/register`,
-    login: `${API_BASE}/auth/login`,
-    refresh: `${API_BASE}/auth/refresh`,
-    logout: `${API_BASE}/auth/logout`,
-    adminUsers: `${API_BASE}/admin/users`
-  };
+document.addEventListener('DOMContentLoaded', () => {
+  const API_URL = 'http://localhost:4001/api/v1';
 
-  const storageKey = 'aplicatto.auth';
-  let feedbackTimeout;
+  // --- DOM Elements ---
+  const sessionInfo = document.getElementById('session-info');
+  const authForms = document.getElementById('auth-forms');
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const authResponse = document.getElementById('auth-response');
+  const toggleLink = document.getElementById('toggle-link');
+  const authTitle = document.getElementById('auth-title');
+  const authSubtitle = document.querySelector('.auth-subtitle');
+  const userDetails = document.getElementById('user-details');
+  const logoutButton = document.getElementById('logout-button');
+  const adminActions = document.getElementById('admin-actions');
+  const refreshTokenButton = document.getElementById('refresh-token-button');
+  const getUsersButton = document.getElementById('get-users-button');
+  const registerPasswordInput = document.getElementById('register-password');
+  const passwordConstraintsList = document.getElementById('password-constraints');
 
-  const selectors = {
-    registerForm: document.querySelector('[data-auth-form="register"]'),
-    loginForm: document.querySelector('[data-auth-form="login"]'),
-    feedback: document.querySelector('[data-auth-feedback]'),
-    feedbackMessage: document.querySelector('[data-auth-feedback-message]'),
-    statusCard: document.querySelector('[data-auth-status]'),
-    statusEmail: document.querySelector('[data-auth-status-email]'),
-    statusRole: document.querySelector('[data-auth-status-role]'),
-    statusUpdated: document.querySelector('[data-auth-status-updated]'),
-    actions: document.querySelector('[data-auth-actions]'),
-    refreshButton: document.querySelector('[data-auth-refresh]'),
-    adminButton: document.querySelector('[data-auth-admin]'),
-    output: document.querySelector('[data-auth-output]'),
-    headerLink: document.querySelector('[data-auth-link]'),
-    headerProfile: document.querySelector('[data-auth-user]'),
-    headerName: document.querySelector('[data-auth-user-name]'),
-    headerRole: document.querySelector('[data-auth-user-role]'),
-    logoutButton: document.querySelector('[data-auth-logout]')
-  };
+  // --- State ---
+  let isLoginView = true;
 
-  function loadSession() {
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      return raw ? JSON.parse(raw) : null;
-    } catch (error) {
-      console.warn('[Aplicatto] No se pudo cargar la sesión almacenada.', error);
-      return null;
-    }
-  }
+  // --- Password Validation ---
+  const validatePassword = () => {
+    if (!registerPasswordInput || !passwordConstraintsList) return;
 
-  let session = loadSession();
-
-  function saveSession(data) {
-    session = {
-      user: data.user,
-      accessToken: data.accessToken,
-      lastUpdated: new Date().toISOString()
+    const value = registerPasswordInput.value;
+    const constraints = {
+      length: passwordConstraintsList.querySelector('[data-constraint="length"]'),
+      lowercase: passwordConstraintsList.querySelector('[data-constraint="lowercase"]'),
+      uppercase: passwordConstraintsList.querySelector('[data-constraint="uppercase"]'),
+      number: passwordConstraintsList.querySelector('[data-constraint="number"]'),
+      symbol: passwordConstraintsList.querySelector('[data-constraint="symbol"]'),
     };
-    try {
-      window.localStorage.setItem(storageKey, JSON.stringify(session));
-    } catch (error) {
-      console.warn('[Aplicatto] No se pudo guardar la sesión.', error);
-    }
-    renderAuthState();
-  }
 
-  function clearSession() {
-    session = null;
-    try {
-      window.localStorage.removeItem(storageKey);
-    } catch (error) {
-      console.warn('[Aplicatto] No se pudo limpiar la sesión.', error);
-    }
-    renderAuthState();
-  }
+    const validations = {
+      length: value.length >= 8,
+      lowercase: /[a-z]/.test(value),
+      uppercase: /[A-Z]/.test(value),
+      number: /[0-9]/.test(value),
+      symbol: /[^A-Za-z0-9]/.test(value),
+    };
 
-  function clearFeedback() {
-    if (!selectors.feedback) return;
-    selectors.feedback.hidden = true;
-    selectors.feedback.removeAttribute('data-variant');
-    if (selectors.feedbackMessage) {
-      selectors.feedbackMessage.textContent = '';
-    }
-  }
-
-  function setFeedback(type, message) {
-    if (!selectors.feedback || !selectors.feedbackMessage) return;
-    clearTimeout(feedbackTimeout);
-
-    if (!message) {
-      clearFeedback();
-      return;
-    }
-
-    selectors.feedback.hidden = false;
-    selectors.feedback.dataset.variant = type;
-    selectors.feedbackMessage.textContent = message;
-
-    feedbackTimeout = window.setTimeout(() => {
-      clearFeedback();
-    }, 6000);
-  }
-
-  function friendlyName(user) {
-    if (!user) return '';
-    if (user.fullName && user.fullName.trim().length > 0) {
-      return user.fullName.trim();
-    }
-    return user.email?.split('@')[0] ?? 'Semillerista';
-  }
-
-  function renderAuthState() {
-    const user = session?.user ?? null;
-    const hasSession = Boolean(user && session?.accessToken);
-
-    if (selectors.headerLink) {
-      selectors.headerLink.hidden = hasSession;
-    }
-
-    if (selectors.headerProfile) {
-      selectors.headerProfile.hidden = !hasSession;
-      if (hasSession && selectors.headerName) {
-        selectors.headerName.textContent = friendlyName(user);
+    let allValid = true;
+    for (const key in validations) {
+      if (constraints[key]) {
+        constraints[key].classList.toggle('valid', validations[key]);
       }
-      if (hasSession && selectors.headerRole) {
-        selectors.headerRole.textContent = user.role === 'admin' ? 'Rol: Administrador' : 'Rol: Miembro';
+      if (!validations[key]) {
+        allValid = false;
       }
     }
+    return allValid;
+  };
 
-    if (selectors.logoutButton) {
-      selectors.logoutButton.disabled = !hasSession;
-    }
-
-    if (selectors.statusCard) {
-      selectors.statusCard.dataset.visible = hasSession ? 'true' : 'false';
-      if (!hasSession) {
-        if (selectors.statusEmail) selectors.statusEmail.textContent = '';
-        if (selectors.statusRole) selectors.statusRole.textContent = '';
-        if (selectors.statusUpdated) selectors.statusUpdated.textContent = '';
-      } else {
-        if (selectors.statusEmail) selectors.statusEmail.textContent = `Correo: ${user.email}`;
-        if (selectors.statusRole) selectors.statusRole.textContent = `Rol: ${user.role}`;
-        if (selectors.statusUpdated) selectors.statusUpdated.textContent = `Actualizado: ${new Date(session.lastUpdated).toLocaleString()}`;
-      }
-    }
-
-    if (selectors.actions) {
-      const showActions = hasSession;
-      selectors.actions.hidden = !showActions;
-    }
-
-    if (selectors.refreshButton) {
-      selectors.refreshButton.disabled = !hasSession;
-    }
-
-    if (selectors.adminButton) {
-      const isAdmin = hasSession && session.user.role === 'admin';
-      selectors.adminButton.disabled = !isAdmin;
-      selectors.adminButton.textContent = isAdmin ? 'Listar usuarios (admin)' : 'Requiere rol admin';
-    }
-
-    if (selectors.output) {
-      selectors.output.hidden = true;
-      selectors.output.textContent = '';
-    }
-  }
-
-  async function request(endpoint, options = {}) {
-    const { body, method = 'POST', auth = false } = options;
-    const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
-
-    if (auth && session?.accessToken) {
-      headers.Authorization = `Bearer ${session.accessToken}`;
-    }
-
-    const response = await window.fetch(endpoint, {
-      method,
-      headers,
-      credentials: 'include',
-      body: body ? JSON.stringify(body) : undefined
+  if (registerPasswordInput) {
+    registerPasswordInput.addEventListener('focus', () => {
+      if (passwordConstraintsList) passwordConstraintsList.style.display = 'block';
     });
-
-    let data = {};
-    const raw = await response.text();
-    if (raw) {
-      try {
-        data = JSON.parse(raw);
-      } catch (error) {
-        data = { raw };
-      }
-    }
-
-    if (!response.ok) {
-      const error = new Error(data?.message || `Error ${response.status}`);
-      error.status = response.status;
-      error.payload = data;
-      throw error;
-    }
-
-    return data;
+    registerPasswordInput.addEventListener('input', validatePassword);
   }
 
-  function withSubmitState(handler) {
-    return async (event) => {
-      event.preventDefault();
-      const form = event.currentTarget;
-      const submitter = event.submitter || form.querySelector('button[type="submit"]');
-      if (submitter) submitter.disabled = true;
-      try {
-        await handler(new window.FormData(form));
-      } catch (error) {
-        if (error.status === 401) {
-          clearSession();
-        }
-        setFeedback('error', error.message || 'Ocurrió un error inesperado.');
-      } finally {
-        if (submitter) submitter.disabled = false;
-      }
-    };
-  }
-
-  async function handleRegister(formData) {
-    setFeedback('info', 'Creando tu cuenta...');
-
-    const payload = {
-      email: String(formData.get('email') || '').trim(),
-      password: String(formData.get('password') || '').trim(),
-      fullName: String(formData.get('fullName') || '').trim() || undefined
-    };
-
-    const data = await request(endpoints.register, { body: payload });
-    saveSession(data);
-    setFeedback('success', `¡Bienvenida/o ${friendlyName(data.user)}! Tu cuenta está activa.`);
-  }
-
-  async function handleLogin(formData) {
-    setFeedback('info', 'Verificando credenciales...');
-
-    const payload = {
-      email: String(formData.get('email') || '').trim(),
-      password: String(formData.get('password') || '').trim()
-    };
-
-    const data = await request(endpoints.login, { body: payload });
-    saveSession(data);
-    setFeedback('success', `Sesión iniciada correctamente. Hola de nuevo, ${friendlyName(data.user)}.`);
-  }
-
-  async function handleLogout() {
-    if (!session) {
-      clearSession();
-      return;
+  // --- API Communication ---
+  const apiRequest = async (endpoint, options = {}) => {
+    const { body, method = 'POST', requiresAuth = false } = options;
+    
+    const headers = { 'Content-Type': 'application/json' };
+    if (requiresAuth) {
+      // The backend now uses HttpOnly cookies, so no Authorization header is needed.
+      // The browser will send the cookie automatically.
     }
 
     try {
-      await request(endpoints.logout, { auth: true });
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        credentials: 'include', // Necessary for sending/receiving cookies
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Use detailed error messages from backend if available
+        const errorMessage = data.errors ? data.errors.map(e => e.msg).join(', ') : (data.message || `Error ${response.status}`);
+        throw new Error(errorMessage);
+      }
+      return data;
     } catch (error) {
-      console.warn('[Aplicatto] Error cerrando sesión', error);
+      console.error(`API request to ${endpoint} failed:`, error);
+      throw error;
+    }
+  };
+
+  // --- UI Updates ---
+  const showMessage = (message, type = 'error') => {
+    authResponse.textContent = message;
+    authResponse.className = `auth-response ${type}`;
+    authResponse.style.display = 'block';
+    setTimeout(() => {
+      authResponse.style.display = 'none';
+    }, 5000);
+  };
+
+  const setButtonLoading = (button, isLoading) => {
+    const buttonText = button.querySelector('.button-text');
+    const spinner = button.querySelector('.spinner');
+    if (isLoading) {
+      button.disabled = true;
+      buttonText.style.display = 'none';
+      spinner.style.display = 'inline-block';
+    } else {
+      button.disabled = false;
+      buttonText.style.display = 'inline-block';
+      spinner.style.display = 'none';
+    }
+  };
+
+  const togglePasswordVisibility = (event) => {
+    const icon = event.currentTarget.querySelector('i');
+    const input = event.currentTarget.previousElementSibling;
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  };
+
+  const updateView = () => {
+    if (isLoginView) {
+      loginForm.style.display = 'block';
+      registerForm.style.display = 'none';
+      authTitle.textContent = 'Iniciar Sesión';
+      authSubtitle.innerHTML = '¿No tienes una cuenta? <a href="#" id="toggle-link">Regístrate</a>';
+    } else {
+      loginForm.style.display = 'none';
+      registerForm.style.display = 'block';
+      authTitle.textContent = 'Crear Cuenta';
+      authSubtitle.innerHTML = '¿Ya tienes una cuenta? <a href="#" id="toggle-link">Inicia Sesión</a>';
+    }
+    // Re-bind the toggle link since innerHTML removes the old one
+    document.getElementById('toggle-link').addEventListener('click', handleToggleView);
+  };
+
+  const showLoggedInState = (user) => {
+    authForms.style.display = 'none';
+    sessionInfo.style.display = 'block';
+
+    userDetails.innerHTML = `
+      <p><strong>ID:</strong> ${user.id}</p>
+      <p><strong>Username:</strong> ${user.username}</p>
+      <p><strong>Email:</strong> ${user.email}</p>
+      <p><strong>Role:</strong> ${user.role}</p>
+    `;
+
+    if (user.role === 'admin') {
+      adminActions.style.display = 'block';
+    }
+  };
+
+  const showLoggedOutState = () => {
+    authForms.style.display = 'block';
+    sessionInfo.style.display = 'none';
+    adminActions.style.display = 'none';
+    isLoginView = true;
+    updateView();
+  };
+
+  // --- Event Handlers ---
+  const handleToggleView = (e) => {
+    e.preventDefault();
+    isLoginView = !isLoginView;
+    updateView();
+  };
+
+  const handleLoginFormSubmit = async (e) => {
+    e.preventDefault();
+    const button = e.target.querySelector('button[type="submit"]');
+    setButtonLoading(button, true);
+
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    try {
+      const { user } = await apiRequest('/auth/login', { body: { email, password } });
+      showMessage('Inicio de sesión exitoso.', 'success');
+      showLoggedInState(user);
+    } catch (error) {
+      showMessage(error.message);
     } finally {
-      clearSession();
-      setFeedback('success', 'Sesión finalizada. ¡Hasta pronto!');
+      setButtonLoading(button, false);
     }
-  }
+  };
 
-  async function handleRefresh() {
-    if (!session) return;
+  const handleRegisterFormSubmit = async (e) => {
+    e.preventDefault();
+    const button = e.target.querySelector('button[type="submit"]');
+    setButtonLoading(button, true);
 
-    setFeedback('info', 'Renovando tokens...');
+    const username = document.getElementById('register-username').value;
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+
     try {
-      const data = await request(endpoints.refresh, { body: {} });
-      saveSession(data);
-      setFeedback('success', 'Tokens renovados correctamente.');
+      const { user } = await apiRequest('/auth/register', { body: { username, email, password } });
+      showMessage('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
+      isLoginView = true;
+      updateView();
+      loginForm.reset();
+      registerForm.reset();
     } catch (error) {
-      if (error.status === 401) {
-        clearSession();
-        setFeedback('error', 'La sesión expiró. Inicia sesión nuevamente.');
-        return;
-      }
-      throw error;
+      showMessage(error.message);
+    } finally {
+      setButtonLoading(button, false);
     }
-  }
+  };
 
-  async function handleAdminList() {
-    if (!session) return;
-    setFeedback('info', 'Consultando usuarios...');
+  const handleLogout = async () => {
     try {
-      const data = await request(endpoints.adminUsers, { method: 'GET', auth: true });
-      setFeedback('success', `Usuarios encontrados: ${data.total}`);
-      if (selectors.output) {
-        selectors.output.hidden = false;
-        selectors.output.textContent = JSON.stringify(data, null, 2);
-      }
+      await apiRequest('/auth/logout', { requiresAuth: true });
+      showMessage('Sesión cerrada exitosamente.', 'success');
     } catch (error) {
-      setFeedback('error', error.message || 'No fue posible obtener la lista de usuarios.');
-      if (error.status === 401 || error.status === 403) {
-        clearSession();
+      // Even if logout fails on the server, clear the client state
+      console.error('Logout failed:', error.message);
+    } finally {
+      showLoggedOutState();
+    }
+  };
+
+  const handleRefreshToken = async () => {
+    const button = refreshTokenButton;
+    setButtonLoading(button, true);
+    try {
+      const { user } = await apiRequest('/auth/refresh', { requiresAuth: true });
+      showMessage('Token refrescado exitosamente.', 'success');
+      showLoggedInState(user); // Re-render with potentially updated info
+    } catch (error) {
+      showMessage(error.message);
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        showLoggedOutState();
       }
+    } finally {
+      setButtonLoading(button, false);
     }
-  }
+  };
 
-  function bindEvents() {
-    if (selectors.registerForm) {
-      selectors.registerForm.addEventListener('submit', withSubmitState(handleRegister));
+  const handleGetUsers = async () => {
+    const button = getUsersButton;
+    setButtonLoading(button, true);
+    try {
+      const data = await apiRequest('/admin/users', { method: 'GET', requiresAuth: true });
+      // Displaying the raw JSON in the user details section for simplicity
+      userDetails.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      showMessage('Usuarios obtenidos.', 'success');
+    } catch (error) {
+      showMessage(error.message);
+    } finally {
+      setButtonLoading(button, false);
     }
+  };
+  
+  const checkInitialSession = async () => {
+      try {
+        // A "refresh" endpoint is perfect for checking an existing session
+        const { user } = await apiRequest('/auth/refresh', { requiresAuth: true });
+        showLoggedInState(user);
+      } catch (error) {
+        // If it fails, it just means there's no active session.
+        showLoggedOutState();
+      }
+  };
 
-    if (selectors.loginForm) {
-      selectors.loginForm.addEventListener('submit', withSubmitState(handleLogin));
-    }
+  // --- Initialization ---
+  const init = () => {
+    // Bind main forms
+    loginForm.addEventListener('submit', handleLoginFormSubmit);
+    registerForm.addEventListener('submit', handleRegisterFormSubmit);
+    toggleLink.addEventListener('click', handleToggleView);
 
-    if (selectors.logoutButton) {
-      selectors.logoutButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        handleLogout();
-      });
-    }
+    // Bind session actions
+    logoutButton.addEventListener('click', handleLogout);
+    refreshTokenButton.addEventListener('click', handleRefreshToken);
+    getUsersButton.addEventListener('click', handleGetUsers);
 
-    if (selectors.refreshButton) {
-      selectors.refreshButton.addEventListener('click', async () => {
-        try {
-          await handleRefresh();
-        } catch (error) {
-          setFeedback('error', error.message || 'No se pudo renovar la sesión.');
-        }
-      });
-    }
+    // Bind all password toggles
+    document.querySelectorAll('.password-toggle').forEach(toggle => {
+      toggle.addEventListener('click', togglePasswordVisibility);
+    });
+    
+    // Check for an active session on page load
+    checkInitialSession();
+  };
 
-    if (selectors.adminButton) {
-      selectors.adminButton.addEventListener('click', async () => {
-        selectors.adminButton.disabled = true;
-        try {
-          await handleAdminList();
-        } finally {
-          selectors.adminButton.disabled = false;
-        }
-      });
-    }
-  }
-
-  function init() {
-    renderAuthState();
-    bindEvents();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
+  init();
+});
